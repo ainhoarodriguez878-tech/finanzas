@@ -33,4 +33,6 @@ jobs:
           mv "$data_migration" "$moved_migration"
           trap 'mv "$moved_migration" "$data_migration"' EXIT
           supabase db push --include-all
+          mv "$moved_migration" "$data_migration"
+          trap - EXIT
           supabase migration repair 20260715133118 --status applied
