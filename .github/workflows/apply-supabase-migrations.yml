@@ -26,13 +26,6 @@ jobs:
       - name: Link your Supabase project
         run: supabase link --project-ref "$PROJECT_ID"
 
-      - name: Apply schema without copied historical transactions
+      - name: Apply pending migrations
         run: |
-          data_migration="supabase/migrations/20260715133118_initial_data.sql"
-          moved_migration="$RUNNER_TEMP/20260715133118_initial_data.sql"
-          mv "$data_migration" "$moved_migration"
-          trap 'mv "$moved_migration" "$data_migration"' EXIT
           supabase db push --include-all
-          mv "$moved_migration" "$data_migration"
-          trap - EXIT
-          supabase migration repair 20260715133118 --status applied
