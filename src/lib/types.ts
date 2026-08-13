@@ -61,6 +61,13 @@ export type TransactionInput = Pick<
   | "notes"
 >;
 
+export type SavingsAutomationInput = {
+  total_amount: number;
+  investment_amount: number;
+  effective_from: string;
+  is_active: boolean;
+};
+
 export type TripProject = {
   id: string;
   user_id: string | null;

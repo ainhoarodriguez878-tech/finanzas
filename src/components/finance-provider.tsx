@@ -23,6 +23,7 @@ import type {
   RecurringRule,
   RentalBooking,
   RentalBookingInput,
+  SavingsAutomationInput,
   Subcategory,
   Transaction,
   TransactionInput,
@@ -58,6 +59,7 @@ type FinanceContextValue = {
   saveBooking: (booking: RentalBookingInput, id?: string) => Promise<void>;
   deleteBooking: (id: string) => Promise<void>;
   savePropertyRecurring: (rule: PropertyRecurringInput, id?: string) => Promise<void>;
+  saveSavingsAutomation: (input: SavingsAutomationInput) => Promise<void>;
   deletePropertyRecurring: (id: string) => Promise<void>;
   saveRecurring: (rule: RecurringInput, id?: string) => Promise<void>;
   deleteRecurring: (id: string) => Promise<void>;
@@ -512,6 +514,80 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     await refresh();
   }, [categories, hasMalagaAccess, refresh, session, supabase]);
 
+  const saveSavingsAutomation = useCallback(async (input: SavingsAutomationInput) => {
+    if (!supabase || !session) throw new Error("Inicia sesión para guardar.");
+    if (!hasMalagaAccess) throw new Error("Esta sección solo está disponible para tu cuenta.");
+
+    const totalAmount = Math.round(Number(input.total_amount) * 100) / 100;
+    const investmentAmount = Math.round(Number(input.investment_amount) * 100) / 100;
+    const normalAmount = Math.round((totalAmount - investmentAmount) * 100) / 100;
+    if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+      throw new Error("Indica una cantidad mensual mayor que cero.");
+    }
+    if (!Number.isFinite(investmentAmount) || investmentAmount < 0 || investmentAmount > totalAmount) {
+      throw new Error("La inversión debe estar entre cero y el total mensual.");
+    }
+    const category = categories.find((item) =>
+      item.category_scope === "property"
+      && item.name.toLocaleLowerCase("es") === "ahorros",
+    ) ?? categories.find((item) => item.category_scope === "property");
+    if (!category) throw new Error("No existe la categoría de Ahorros.");
+
+    const subcategoryFor = (name: string) => subcategories.find((item) =>
+      item.category_id === category.id
+      && item.name.toLocaleLowerCase("es") === name,
+    );
+    const normalSubcategory = subcategoryFor("aportación");
+    const investmentSubcategory = subcategoryFor("inversión");
+    if (normalAmount > 0 && !normalSubcategory) throw new Error("No existe la subcategoría Aportación.");
+    if (investmentAmount > 0 && !investmentSubcategory) throw new Error("No existe la subcategoría Inversión.");
+
+    const start = new Date(`${input.effective_from}T00:00:00Z`);
+    if (Number.isNaN(start.getTime())) throw new Error("Indica una fecha válida para empezar.");
+    const automationNames = new Set(["Ahorro automático", "Inversión automática"]);
+    const existingRules = recurringRules.filter((rule) =>
+      rule.context?.toLocaleLowerCase("es") === "ahorros"
+      && automationNames.has(rule.name),
+    );
+
+    async function saveRule(name: string, amount: number, subcategoryId: string | null) {
+      const existing = existingRules.find((rule) => rule.name === name);
+      if (amount <= 0) {
+        if (existing) {
+          const { error } = await supabase!.from("recurring_rules").delete().eq("id", existing.id);
+          if (error) throw error;
+        }
+        return;
+      }
+      const payload = {
+        name,
+        amount,
+        frequency: "monthly" as const,
+        effective_from: input.effective_from,
+        effective_until: null,
+        user_id: session!.user.id,
+        category_id: category!.id,
+        subcategory_id: subcategoryId,
+        context: "Ahorros",
+        day_of_month: start.getUTCDate(),
+        auto_generate: true,
+        is_active: input.is_active,
+        notes: "Generado por la automatización mensual de Ahorros.",
+      };
+      const query = existing
+        ? supabase!.from("recurring_rules").update(payload).eq("id", existing.id)
+        : supabase!.from("recurring_rules").insert(payload);
+      const { error } = await query;
+      if (error) throw error;
+    }
+
+    await saveRule("Ahorro automático", normalAmount, normalSubcategory?.id ?? null);
+    await saveRule("Inversión automática", investmentAmount, investmentSubcategory?.id ?? null);
+    const { error: generationError } = await supabase.rpc("generate_due_recurring_transactions");
+    if (generationError) throw generationError;
+    await refresh();
+  }, [categories, hasMalagaAccess, recurringRules, refresh, session, subcategories, supabase]);
+
   const deletePropertyRecurring = useCallback(async (id: string) => {
     if (!supabase) throw new Error("Supabase no está configurado.");
     if (!hasMalagaAccess) throw new Error("Esta sección solo está disponible para la cuenta propietaria.");
@@ -623,6 +699,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     saveBooking,
     deleteBooking,
     savePropertyRecurring,
+    saveSavingsAutomation,
     deletePropertyRecurring,
     saveRecurring,
     deleteRecurring,
@@ -630,7 +707,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   }), [
     accounts, addTransaction, bookings, categories, deleteBooking, deletePropertyRecurring,
     deleteRecurring, deleteTransaction, deleteTripProject, error, hasMalagaAccess, loading, malagaAccessReady, notice, properties,
-    recurringRules, refresh, saveBooking, savePropertyRecurring, saveRecurring, saveTripProject, session,
+    recurringRules, refresh, saveBooking, savePropertyRecurring, saveRecurring, saveSavingsAutomation, saveTripProject, session,
     signInWithPassword, signOut, subcategories, supabase,
     toggleRecurring, transactions, tripProjects, updatePassword, updateTransaction,
   ]);

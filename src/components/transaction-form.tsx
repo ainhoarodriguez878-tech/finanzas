@@ -22,7 +22,7 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
-const savingsSubcategoryNames = new Set(["aportación", "retirada", "objetivo", "otros"]);
+const savingsSubcategoryNames = new Set(["aportación", "retirada", "objetivo", "inversión", "desinversión", "otros"]);
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -54,6 +54,7 @@ export function TransactionForm({
   isDeleting = false,
   scope = "general",
   fixedDirection,
+  preferredSubcategoryName,
 }: {
   initial?: Transaction;
   onSaved?: () => void;
@@ -62,6 +63,7 @@ export function TransactionForm({
   isDeleting?: boolean;
   scope?: "general" | "property";
   fixedDirection?: "income" | "expense";
+  preferredSubcategoryName?: string;
 }) {
   const { categories, subcategories, tripProjects, addTransaction, updateTransaction } = useFinance();
   const [advanced, setAdvanced] = useState(Boolean(initial?.notes));
@@ -121,6 +123,14 @@ export function TransactionForm({
     setValue("category_id", availableCategories.length === 1 ? availableCategories[0].id : "", { shouldValidate: true });
     setValue("subcategory_id", "");
   }, [availableCategories, categoryId, setValue]);
+
+  useEffect(() => {
+    if (initial || !preferredSubcategoryName || subcategoryId) return;
+    const preferred = availableSubcategories.find((subcategory) =>
+      subcategory.name.toLocaleLowerCase("es") === preferredSubcategoryName.toLocaleLowerCase("es"),
+    );
+    if (preferred) setValue("subcategory_id", preferred.id, { shouldValidate: true });
+  }, [availableSubcategories, initial, preferredSubcategoryName, subcategoryId, setValue]);
 
   useEffect(() => {
     if (scope === "property" || direction === "income") {

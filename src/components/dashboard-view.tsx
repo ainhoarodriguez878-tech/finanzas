@@ -104,6 +104,10 @@ export function DashboardView() {
     () => transactions.filter((transaction) => !isMalagaTransaction(transaction, categoriesById)),
     [categoriesById, transactions],
   );
+  const savingsTransactions = useMemo(
+    () => transactions.filter((transaction) => isMalagaTransaction(transaction, categoriesById)),
+    [categoriesById, transactions],
+  );
 
   const categoryName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
   const subcategoryName = useMemo(() => new Map(subcategories.map((s) => [s.id, s.name])), [subcategories]);
@@ -453,7 +457,13 @@ export function DashboardView() {
   const usualToDate = usualFullMonth * (now.getDate() / daysInMonth);
   const heroPct = usualToDate > 0 ? (monthTotal - usualToDate) / usualToDate : null;
   const monthIncome = byIncomeMonth.get(currentKey) ?? 0;
-  const monthNet = monthIncome - monthTotal;
+  // El ahorro y la inversión no son un gasto, pero sí dejan de estar
+  // disponibles para gastar. Por eso se descuentan solo del balance
+  // disponible, no del gráfico de gastos.
+  const monthSavings = savingsTransactions
+    .filter((transaction) => transaction.transaction_date.startsWith(currentKey))
+    .reduce((total, transaction) => total + transaction.amount, 0);
+  const monthNet = monthIncome - monthTotal - monthSavings;
 
   const lastEntries = useMemo(
     () =>
@@ -500,10 +510,11 @@ export function DashboardView() {
           </div>
 
           <div className="c7-card">
-            <span className="c7-lbl">Balance Neto</span>
+            <span className="c7-lbl">Balance disponible</span>
             <strong className={`c7-val ${monthNet >= 0 ? "positive" : "negative"}`}>
               {monthNet >= 0 ? "+" : ""}{formatCurrency(monthNet)}
             </strong>
+            {monthSavings > 0 ? <small className="c7-note">Después de apartar {formatCurrency(monthSavings)}</small> : null}
           </div>
         </div>
       </div>
