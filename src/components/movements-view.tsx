@@ -87,7 +87,7 @@ export function MovementsView() {
         eyebrow=""
         title="Apuntes"
         description={hasMalagaAccess
-          ? "Tus gastos e ingresos personales. El Piso Málaga vive únicamente en su propia pestaña."
+          ? "Tus gastos e ingresos personales. Los ahorros viven únicamente en su propia pestaña."
           : "Todos tus gastos e ingresos, ordenados y fáciles de encontrar."}
         action={<AppLink href="/movimientos/nuevo" className="button primary"><Plus size={16} />Anotar</AppLink>}
       />

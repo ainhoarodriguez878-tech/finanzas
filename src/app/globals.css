@@ -2782,7 +2782,7 @@ h1, h2, h3 { font-family: var(--font-display), var(--font-hand), cursive; font-w
 .settings-add-subcategory { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding-top: 12px; }
 .settings-help { margin-top: 18px; }
 
-/* Pestaña independiente del Piso Málaga */
+/* Pestaña independiente de Ahorros */
 .property-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .property-year-bar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; border-block: 1px solid var(--rule-ink); padding: 11px 4px; }
 .property-year-bar > div { display: flex; align-items: center; gap: 10px; }

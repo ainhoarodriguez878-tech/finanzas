@@ -196,13 +196,15 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         ? loadedTransactions
         : loadedTransactions.filter((transaction) =>
           (!transaction.category_id || visibleCategoryIds.has(transaction.category_id))
-          && transaction.context?.toLocaleLowerCase("es") !== "piso málaga"));
+          && transaction.context?.toLocaleLowerCase("es") !== "piso málaga"
+          && transaction.context?.toLocaleLowerCase("es") !== "ahorros"));
       setTripProjects((tripProjectsResult.data ?? []) as TripProject[]);
       setRecurringRules(includeMalaga
         ? loadedRecurring
         : loadedRecurring.filter((rule) =>
           (!rule.category_id || visibleCategoryIds.has(rule.category_id))
-          && rule.context?.toLocaleLowerCase("es") !== "piso málaga"));
+          && rule.context?.toLocaleLowerCase("es") !== "piso málaga"
+          && rule.context?.toLocaleLowerCase("es") !== "ahorros"));
 
       if (includeMalaga) {
         const [bookingsResult, propertiesResult] = await Promise.all([
@@ -260,7 +262,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     async function bootstrapAndLoad() {
       setLoading(true);
-      const { data: bootstrapData, error: bootstrapError } = await supabase!.rpc("bootstrap_user_workspace");
+      const { error: bootstrapError } = await supabase!.rpc("bootstrap_user_workspace");
       if (!active) return;
       if (bootstrapError) {
         setError(messageFrom(bootstrapError));
@@ -268,12 +270,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return;
       }
-      const access = Boolean(
-        bootstrapData
-        && typeof bootstrapData === "object"
-        && "has_malaga_access" in bootstrapData
-        && bootstrapData.has_malaga_access,
-      );
+      // Esta copia es privada: la pestaña de Ahorros pertenece a cualquier
+      // usuario autenticado de este proyecto, no a la cuenta del repositorio
+      // original del que nació el fork.
+      const access = Boolean(activeUserId);
       cacheMalagaAccess(activeUserId, access);
       hasMalagaAccessRef.current = access;
       setHasMalagaAccess(access);
@@ -436,8 +436,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const saveBooking = useCallback(async (booking: RentalBookingInput, id?: string) => {
     if (!supabase || !session) throw new Error("Inicia sesión para guardar.");
     if (!hasMalagaAccess) throw new Error("Esta sección solo está disponible para la cuenta propietaria.");
-    const property = properties.find((item) => item.name === "Piso Málaga") ?? properties[0];
-    if (!property) throw new Error("No existe la propiedad Piso Málaga.");
+    const property = properties.find((item) => item.name === "Ahorros") ?? properties[0];
+    if (!property) throw new Error("No existe el espacio de Ahorros.");
 
     const calculation = calculateRentalBooking({
       checkInDate: booking.check_in_date,
@@ -491,14 +491,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (!supabase || !session) throw new Error("Inicia sesión para guardar.");
     if (!hasMalagaAccess) throw new Error("Esta sección solo está disponible para la cuenta propietaria.");
     const category = categories.find((item) => item.category_scope === "property");
-    if (!category) throw new Error("No existe la categoría del Piso Málaga.");
+    if (!category) throw new Error("No existe la categoría de Ahorros.");
     const start = new Date(`${rule.effective_from}T00:00:00Z`);
     const payload = {
       ...rule,
       amount: -Math.abs(Number(rule.amount)),
       user_id: session.user.id,
       category_id: category.id,
-      context: "Piso Málaga",
+      context: "Ahorros",
       day_of_month: start.getUTCDate(),
       auto_generate: true,
       is_active: true,
@@ -567,8 +567,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const deleteRecurring = useCallback(async (id: string) => {
     if (!supabase) throw new Error("Supabase no está configurado.");
     const target = recurringRules.find((rule) => rule.id === id);
-    if (target?.context?.toLocaleLowerCase("es") === "piso málaga") {
-      throw new Error("Gestiona este recurrente desde Piso Málaga.");
+    const context = target?.context?.toLocaleLowerCase("es");
+    if (context === "piso málaga" || context === "ahorros") {
+      throw new Error("Gestiona este recurrente desde Ahorros.");
     }
     const { error: recurringError } = await supabase.from("recurring_rules").delete().eq("id", id);
     if (recurringError) throw recurringError;
@@ -578,8 +579,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const toggleRecurring = useCallback(async (id: string, isActive: boolean) => {
     if (!supabase) throw new Error("Supabase no está configurado.");
     const target = recurringRules.find((rule) => rule.id === id);
-    if (target?.context?.toLocaleLowerCase("es") === "piso málaga") {
-      throw new Error("Gestiona este recurrente desde Piso Málaga.");
+    const context = target?.context?.toLocaleLowerCase("es");
+    if (context === "piso málaga" || context === "ahorros") {
+      throw new Error("Gestiona este recurrente desde Ahorros.");
     }
     const { error: recurringError } = await supabase
       .from("recurring_rules")

@@ -11,7 +11,7 @@ import type { Category, CategoryScope, Subcategory } from "@/lib/types";
 const SCOPE_LABELS: Record<CategoryScope, string> = {
   expense: "Gastos generales",
   income: "Ingresos",
-  property: "Piso Málaga",
+  property: "Ahorros",
 };
 
 function readableError(message: string) {

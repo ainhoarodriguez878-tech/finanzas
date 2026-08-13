@@ -48,7 +48,8 @@ export function RecurringView() {
       .filter((rule) => {
         const category = categories.find((item) => item.id === rule.category_id);
         return category?.category_scope !== "property"
-          && rule.context?.toLocaleLowerCase("es") !== "piso málaga";
+          && rule.context?.toLocaleLowerCase("es") !== "piso málaga"
+          && rule.context?.toLocaleLowerCase("es") !== "ahorros";
       })
       .sort((left, right) =>
         Number(right.is_active) - Number(left.is_active)

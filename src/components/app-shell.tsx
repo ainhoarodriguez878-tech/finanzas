@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Building2, CalendarClock, House, LogOut, MapPinned, Plus, ReceiptText, Settings } from "lucide-react";
+import { CalendarClock, House, LogOut, MapPinned, PiggyBank, Plus, ReceiptText, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 import { AppLink } from "@/components/app-link";
 import { useFinance } from "@/components/finance-provider";
@@ -28,7 +28,7 @@ const ownerMobileNavigation = [
   mobileNavigation[0],
   mobileNavigation[1],
   mobileNavigation[2],
-  { href: "/piso-malaga", label: "Piso", Icon: Building2 },
+  { href: "/ahorros", label: "Ahorros", Icon: PiggyBank },
   mobileNavigation[4],
 ];
 
@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <nav className="nb-nav" aria-label="Navegación principal">
             {navigation.flatMap((item) => (
               item.href === "/viajes" && hasMalagaAccess
-                ? [item, { href: "/piso-malaga", label: "Piso Málaga" }]
+                ? [item, { href: "/ahorros", label: "Ahorros" }]
                 : [item]
             )).map((item) => {
               const active = isRouteActive(path, item.href);

@@ -22,6 +22,8 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
+const savingsSubcategoryNames = new Set(["aportación", "retirada", "objetivo", "otros"]);
+
 type FormValues = z.infer<typeof formSchema>;
 
 function defaults(initial?: Transaction, fixedDirection?: "income" | "expense"): FormValues {
@@ -94,12 +96,13 @@ export function TransactionForm({
   const availableSubcategories = useMemo(
     () => subcategories.filter((subcategory) => {
       if (subcategory.category_id !== categoryId || !subcategory.is_active) return false;
-      if (scope !== "property") return true;
-      const name = subcategory.name.toLocaleLowerCase("es");
-      const incomeConcept = name.startsWith("ingreso") || name.startsWith("reembolso");
-      return direction === "income" ? incomeConcept : !incomeConcept;
+      if (scope === "property") {
+        return savingsSubcategoryNames.has(subcategory.name.toLocaleLowerCase("es"))
+          || subcategory.id === initial?.subcategory_id;
+      }
+      return true;
     }),
-    [categoryId, direction, scope, subcategories],
+    [categoryId, initial?.subcategory_id, scope, subcategories],
   );
   const usesSubcategorySelector = scope === "property" || direction === "income";
   const availableTrips = useMemo(
@@ -111,7 +114,7 @@ export function TransactionForm({
   const yesterday = shiftDay(-1);
 
   // Cada tipo de apunte solo puede usar sus categorías: gastos generales,
-  // ingresos o Piso Málaga. Si solo hay una, se selecciona automáticamente.
+  // ingresos o ahorros. Si solo hay una, se selecciona automáticamente.
   useEffect(() => {
     if (!availableCategories.length) return;
     if (availableCategories.some((category) => category.id === categoryId)) return;
@@ -166,7 +169,7 @@ export function TransactionForm({
       category_id: values.category_id,
       subcategory_id: values.subcategory_id || null,
       context: scope === "property"
-        ? "Piso Málaga"
+        ? "Ahorros"
         : values.trip_project_id
           ? null
           : initial?.context ?? null,
@@ -182,7 +185,7 @@ export function TransactionForm({
       if (initial) await updateTransaction(initial.id, input);
       else await addTransaction(input);
       if (onSaved) onSaved();
-      else navigateToAppRoute(scope === "property" ? "/piso-malaga" : "/movimientos");
+      else navigateToAppRoute(scope === "property" ? "/ahorros" : "/movimientos");
     } catch (caught) {
       setSubmitError(caught instanceof Error ? caught.message : "No se pudo guardar el movimiento.");
     }
@@ -247,13 +250,13 @@ export function TransactionForm({
           value={rawAmount}
           onChange={handleAmountChange}
         />
-        <span className="hint">{errors.amount ? errors.amount.message : direction === "expense" ? "¿cuánto te has gastado?" : "¿cuánto has ingresado?"}</span>
+        <span className="hint">{errors.amount ? errors.amount.message : scope === "property" ? direction === "expense" ? "¿cuánto has retirado?" : "¿cuánto has apartado?" : direction === "expense" ? "¿cuánto te has gastado?" : "¿cuánto has ingresado?"}</span>
       </div>
 
       {!availableCategories.length ? (
         <p className="notice error" style={{ marginTop: 20 }}>
           {scope === "property"
-            ? "No hay una categoría configurada para el Piso Málaga. Créala en Ajustes."
+            ? "No hay una categoría configurada para Ahorros. Créala en Ajustes."
             : direction === "income"
               ? "No hay una categoría configurada para ingresos. Créala en Ajustes."
               : "No hay categorías de gasto activas. Créala o actívala en Ajustes."}
@@ -262,7 +265,7 @@ export function TransactionForm({
         <>
           {availableCategories.length > 1 ? (
             <div className="field" style={{ marginTop: 20 }}>
-              <label htmlFor="tx-category">{scope === "property" ? "Categoría del piso" : "Categoría de ingreso"}</label>
+              <label htmlFor="tx-category">{scope === "property" ? "Categoría de ahorro" : "Categoría de ingreso"}</label>
               <select id="tx-category" value={categoryId} onChange={(event) => pickCategory(event.target.value)}>
                 <option value="">Selecciona una categoría…</option>
                 {availableCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
@@ -270,7 +273,7 @@ export function TransactionForm({
             </div>
           ) : null}
           <div className="field" style={{ marginTop: 20 }}>
-            <label htmlFor="tx-subcategory">{scope === "property" ? "Tipo de apunte del piso" : "Tipo de ingreso"}</label>
+            <label htmlFor="tx-subcategory">{scope === "property" ? "Tipo de movimiento" : "Tipo de ingreso"}</label>
             <select
               id="tx-subcategory"
               value={subcategoryId}
