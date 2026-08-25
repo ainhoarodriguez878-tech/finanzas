@@ -459,9 +459,10 @@ export function DashboardView() {
   const monthIncome = byIncomeMonth.get(currentKey) ?? 0;
   // El ahorro y la inversión no son un gasto, pero sí dejan de estar
   // disponibles para gastar. Por eso se descuentan solo del balance
-  // disponible, no del gráfico de gastos.
+  // disponible, no del gráfico de gastos. Solo se consideran las aportaciones
+  // (valores positivos), ignorando las retiradas de ahorros en este cálculo.
   const monthSavings = savingsTransactions
-    .filter((transaction) => transaction.transaction_date.startsWith(currentKey))
+    .filter((transaction) => transaction.transaction_date.startsWith(currentKey) && transaction.amount > 0)
     .reduce((total, transaction) => total + transaction.amount, 0);
   const monthNet = monthIncome - monthTotal - monthSavings;
 
