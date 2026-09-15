@@ -2720,6 +2720,9 @@ h1, h2, h3 { font-family: var(--font-display), var(--font-hand), cursive; font-w
 .auth-icon.small { width: 42px; height: 42px; }
 .auth-form { display: grid; gap: 12px; margin-top: 22px; }
 .auth-form label { font-family: var(--font-hand), cursive; font-size: 14px; font-weight: 700; }
+.auth-remember-row { display: flex; align-items: center; gap: 8px; font-family: var(--font-hand), cursive; font-size: 15px; color: var(--pencil); cursor: pointer; user-select: none; margin: 4px 0 2px; }
+.auth-remember-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--ink); cursor: pointer; }
+.auth-remember-row:hover { color: var(--ink); }
 .auth-switch { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 16px; border: 0; background: transparent; color: var(--blue-pen); font-family: var(--font-hand), cursive; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 .auth-actions { display: grid; gap: 2px; }
 .auth-switch.muted { margin-top: 2px; color: var(--pencil); font-weight: 400; }

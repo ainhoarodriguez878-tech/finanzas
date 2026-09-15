@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { getSupabase } from "@/lib/supabase";
+import { clearDeviceCredentials, updateSavedPassword } from "@/lib/device-auth";
 import { calculateRentalBooking } from "@/lib/property-rental";
 import { todayIso } from "@/lib/format";
 import type {
@@ -343,6 +344,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     try {
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
+      updateSavedPassword(password);
       setNotice("Clave guardada.");
     } catch (caught) {
       setError(messageFrom(caught));
@@ -352,6 +354,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!supabase) return;
+    clearDeviceCredentials();
     await supabase.auth.signOut();
     clearData();
   }, [clearData, supabase]);
