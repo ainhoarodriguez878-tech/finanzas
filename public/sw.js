@@ -1,4 +1,4 @@
-const CACHE = "finanzas-shell-v6";
+const CACHE = "finanzas-shell-v7";
 const CORE_ROUTES = [
   "",
   "dashboard/",
@@ -6,6 +6,7 @@ const CORE_ROUTES = [
   "movimientos/nuevo/",
   "recurrentes/",
   "viajes/",
+  "ahorros/",
   "piso-malaga/",
   "importar-exportar/",
   "ajustes/",
