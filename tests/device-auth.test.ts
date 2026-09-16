@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
   clearDeviceCredentials,
   getDeviceCredentials,
@@ -7,8 +7,26 @@ import {
 } from "@/lib/device-auth";
 
 describe("device-auth persistence", () => {
+  const store = new Map<string, string>();
+  const mockLocalStorage = {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => store.set(key, String(value)),
+    removeItem: (key: string) => store.delete(key),
+    clear: () => store.clear(),
+  };
+
   beforeEach(() => {
-    window.localStorage.clear();
+    store.clear();
+    Object.defineProperty(globalThis, "window", {
+      value: { localStorage: mockLocalStorage },
+      configurable: true,
+      writable: true,
+    });
+  });
+
+  afterAll(() => {
+    // @ts-expect-error cleanup globalThis.window for node env
+    delete globalThis.window;
   });
 
   it("returns null when no credentials are saved", () => {

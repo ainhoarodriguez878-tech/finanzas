@@ -7,7 +7,6 @@ const CORE_ROUTES = [
   "recurrentes/",
   "viajes/",
   "ahorros/",
-  "piso-malaga/",
   "importar-exportar/",
   "ajustes/",
   "instalar/",
