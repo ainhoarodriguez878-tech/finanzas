@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   Smartphone,
 } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { AppLink } from "@/components/app-link";
 import { useFinance } from "@/components/finance-provider";
 import {
@@ -27,42 +27,27 @@ export function AuthGate({ children }: { children: ReactNode }) {
     error,
     signInWithPassword,
   } = useFinance();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(() => getDeviceCredentials()?.email ?? "");
+  const [password, setPassword] = useState(() => getDeviceCredentials()?.password ?? "");
   const [rememberDevice, setRememberDevice] = useState(true);
-  const [isAutoConnecting, setIsAutoConnecting] = useState(false);
-  const [connectionNotice, setConnectionNotice] = useState<string | null>(null);
   const autoLoginTriggeredRef = useRef(false);
   const normalizedPath = (pathname ?? "/").replace(/\/+$/, "") || "/";
 
-  // Intentar auto-conexión y precargar credenciales si están guardadas en este dispositivo
+  // Intentar auto-conexión inicial transparente si existen credenciales en este dispositivo
   useEffect(() => {
+    if (!configured || session || loading || autoLoginTriggeredRef.current) return;
     const saved = getDeviceCredentials();
     if (!saved) return;
 
-    setEmail(saved.email);
-    setPassword(saved.password);
-
-    if (configured && !session && !loading && !autoLoginTriggeredRef.current) {
-      autoLoginTriggeredRef.current = true;
-      setIsAutoConnecting(true);
-      setConnectionNotice(null);
-
-      void signInWithPassword(saved.email, saved.password).finally(() => {
-        setIsAutoConnecting(false);
-      });
-    }
+    autoLoginTriggeredRef.current = true;
+    void signInWithPassword(saved.email, saved.password);
   }, [configured, loading, session, signInWithPassword]);
 
-  // Si ocurre un error de autenticación, decidir si se limpian las credenciales
-  // o si es una pausa/fallo de red de Supabase
-  useEffect(() => {
-    if (!error) return;
+  // Mensaje amigable derivado cuando Supabase está pausado o hay fallo de red
+  const connectionNotice = useMemo(() => {
+    if (!error) return null;
     const lower = error.toLowerCase();
-    if (lower.includes("no son correctos") || lower.includes("invalid login credentials")) {
-      clearDeviceCredentials();
-      setConnectionNotice(null);
-    } else if (
+    if (
       lower.includes("fetch") ||
       lower.includes("network") ||
       lower.includes("servidor") ||
@@ -70,10 +55,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
       lower.includes("connection") ||
       lower.includes("error inesperado")
     ) {
-      setConnectionNotice(
-        "No se ha podido conectar con tu base de datos de Supabase. Si ha estado inactiva varios días, puede estar pausada. Comprueba tu panel de Supabase y pulsa 'Resume'."
-      );
+      return "No se ha podido conectar con tu base de datos de Supabase. Si ha estado inactiva varios días, puede estar pausada. Comprueba tu panel de Supabase y pulsa 'Resume'.";
     }
+    return null;
   }, [error]);
 
   // Las instrucciones de instalación deben poder consultarse antes de iniciar
@@ -97,17 +81,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   // Mientras se restaura una sesión existente o se realiza la auto-conexión,
   // se muestra el estado de carga para una experiencia fluida.
-  if (loading || isAutoConnecting) {
+  if (loading) {
     return (
       <div className="loading-state">
         <LoaderCircle className="spin" />
-        <p>
-          {session
-            ? "Preparando tus datos…"
-            : isAutoConnecting
-            ? "Reconectando con tu libreta personal…"
-            : "Comprobando tu sesión…"}
-        </p>
+        <p>{session ? "Preparando tus datos…" : "Comprobando tu sesión…"}</p>
       </div>
     );
   }
@@ -115,7 +93,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (!session) {
     async function submitPassword(event: FormEvent) {
       event.preventDefault();
-      setConnectionNotice(null);
       const trimmedEmail = email.trim();
       const success = await signInWithPassword(trimmedEmail, password);
       if (success) {
@@ -124,14 +101,13 @@ export function AuthGate({ children }: { children: ReactNode }) {
         } else {
           clearDeviceCredentials();
         }
+      } else {
+        clearDeviceCredentials();
       }
     }
 
     async function handleRetry() {
-      setConnectionNotice(null);
-      setIsAutoConnecting(true);
       await signInWithPassword(email.trim(), password);
-      setIsAutoConnecting(false);
     }
 
     return (
