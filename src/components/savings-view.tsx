@@ -216,7 +216,7 @@ export function SavingsView() {
         </div>
         <div className="property-table-scroll">
           <table className="data-table property-dashboard-table savings-table">
-            <thead><tr><th>Mes</th><th>Ahorro normal</th><th>Inversión</th><th>Retiradas</th><th>Neto del mes</th><th>Normal acumulado</th><th>Invertido acumulado</th></tr></thead>
+            <thead><tr><th>Mes</th><th>Ahorro normal</th><th>Inversión</th><th>Retiradas</th><th>Normal acumulado</th><th>Invertido acumulado</th></tr></thead>
             <tbody>
               {analysis.rows.map((row) => {
                 const withdrawals = row.normalWithdrawals + row.investmentWithdrawals;
@@ -226,7 +226,6 @@ export function SavingsView() {
                     <td className="amount positive">{row.normalContributions ? signedCurrency(row.normalContributions) : "—"}</td>
                     <td className="amount">{row.investmentContributions ? signedCurrency(row.investmentContributions) : "—"}</td>
                     <td className="amount">{withdrawals ? formatCurrency(-withdrawals) : "—"}</td>
-                    <td className={`amount ${row.totalNet >= 0 ? "positive" : ""}`}>{row.totalNet ? signedCurrency(row.totalNet) : "—"}</td>
                     <td className={`amount ${row.normalBalance >= 0 ? "positive" : ""}`}>{row.normalBalance ? signedCurrency(row.normalBalance) : "—"}</td>
                     <td className={`amount ${row.investmentBalance >= 0 ? "positive" : ""}`}>{row.investmentBalance ? signedCurrency(row.investmentBalance) : "—"}</td>
                   </tr>
