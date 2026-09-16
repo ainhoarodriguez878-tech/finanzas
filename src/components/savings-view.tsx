@@ -206,7 +206,7 @@ export function SavingsView() {
       <div className="property-summary savings-summary" aria-label={`Resumen de ahorros en ${selectedYear}`}>
         <div><span>Ahorro normal</span><strong className={analysis.normalNet >= 0 ? "positive" : ""}>{signedCurrency(analysis.normalNet)}</strong></div>
         <div><span>Invertido</span><strong className={analysis.investmentNet >= 0 ? "positive" : ""}>{signedCurrency(analysis.investmentNet)}</strong></div>
-        <div><span>Apartado total</span><strong className={analysis.totalNet >= 0 ? "positive" : ""}>{signedCurrency(analysis.totalNet)}</strong></div>
+        <div><span>Saldo total actual</span><strong className={analysis.totalNet >= 0 ? "positive" : ""}>{signedCurrency(analysis.totalNet)}</strong></div>
         <div><span>Retirado</span><strong>{formatCurrency(-analysis.totalWithdrawals)}</strong></div>
       </div>
 
@@ -216,7 +216,7 @@ export function SavingsView() {
         </div>
         <div className="property-table-scroll">
           <table className="data-table property-dashboard-table savings-table">
-            <thead><tr><th>Mes</th><th>Ahorro normal</th><th>Inversión</th><th>Retiradas</th><th>Apartado</th><th>Normal acumulado</th><th>Invertido acumulado</th></tr></thead>
+            <thead><tr><th>Mes</th><th>Ahorro normal</th><th>Inversión</th><th>Retiradas</th><th>Neto del mes</th><th>Normal acumulado</th><th>Invertido acumulado</th></tr></thead>
             <tbody>
               {analysis.rows.map((row) => {
                 const withdrawals = row.normalWithdrawals + row.investmentWithdrawals;
